@@ -25,6 +25,10 @@ O skouswap2.0 permite ao usuário:
  - primeiro instale as dependencias
    arch linux: `sudo pacman -S git`
    mint, ubuntu, debian: `sudo apt install git`
+clone o repositorio:
+```
+git clone https://github.com/Skourge01/skouswap2.0
+```
 ### Conclusão:
 
 O skouswap2.0 oferece uma maneira mais fácil e interativa de configurar swapfiles no Linux, aproveitando a interface gráfica do Zenity para tornar o processo mais amigável, e a detecção automática da distribuição para garantir compatibilidade com uma ampla gama de sistemas.
