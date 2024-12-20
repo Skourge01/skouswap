@@ -21,9 +21,16 @@ O skouswap2.0 permite ao usuário:
 
    -  Simplicidade e clareza: A versão 2.0 foi desenvolvida com foco em simplicidade e clareza, tornando o processo de configuração do swapfile mais acessível para usuários menos experientes, sem perder a flexibilidade de funcionar em várias distribuições.
 - - - 
+### Instalação  
+ - primeiro instale as dependencias
+   arch linux: `sudo pacman -S git`
+   mint, ubuntu, debian: `sudo apt install git`
 ### Conclusão:
 
 O skouswap2.0 oferece uma maneira mais fácil e interativa de configurar swapfiles no Linux, aproveitando a interface gráfica do Zenity para tornar o processo mais amigável, e a detecção automática da distribuição para garantir compatibilidade com uma ampla gama de sistemas.
+
+
+
 
 
 ### Referencias 
