@@ -27,7 +27,7 @@ O skouswap2.0 permite ao usuário:
    mint, ubuntu, debian: `sudo apt install git`
 clone o repositorio:
 ```
-git clone https://github.com/Skourge01/skouswap2.0
+git clone https://github.com/Skourge01/skouswap
 ```
 ### Conclusão:
 
