@@ -1,4 +1,4 @@
-# skouswap2.0
+# skouswap
 
 skouswap2.0 é a versão aprimorada de um script para gerenciar swapfiles no Linux. Ele foi desenvolvido para ser simples de usar e oferecer compatibilidade com uma ampla gama de distribuições Linux, como [Arch Linux](https://archlinux.org/) , [Debian](https://www.debian.org/index.pt.html), [Ubuntu](https://ubuntu.com/download), [Linux Mint](https://linuxmint.com/), entre outras. O script utiliza a ferramenta [Zenity](https://github.com/GNOME/zenity) para fornecer uma interface gráfica interativa, permitindo que o usuário configure a quantidade de swap de maneira intuitiva, sem precisar editar manualmente os arquivos de configuração ou executar comandos complexos.
 
