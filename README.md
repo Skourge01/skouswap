@@ -13,15 +13,16 @@ Plataformas Suportadas:
 
 Instalação:
 
-    Acesse a nova [release do skouswap no GitHub.](https://github.com/Skourge01/skouswap/releases/tag/skouswap)
-    Baixe o script mais recente.
-    Dê permissão de execução ao script:
+Acesse a nova [release do skouswap no GitHub.](https://github.com/Skourge01/skouswap/releases/tag/skouswap)
+Baixe o script mais recente.
+Dê permissão de execução ao script:
 
-chmod +x skouswap.sh
-
+```
+chmod +x skouswap2.1.sh
+```
 Execute o script:
 
-    ./skouswap.sh
+    ./skouswap2.1.sh
 
 Contato:
 
