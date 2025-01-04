@@ -18,11 +18,11 @@ Baixe o script mais recente.
 Dê permissão de execução ao script:
 
 ```
-chmod +x skouswap2.1.sh
+chmod +x skouswap2.3.sh
 ```
 Execute o script:
 
-    ./skouswap2.1.sh
+    ./skouswap2.3.sh
 
 Contato:
 
