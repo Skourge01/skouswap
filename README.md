@@ -17,5 +17,5 @@ Execute o script:
 
 Contato:
 
-    Reddit
+    Reddit: [Skourge01](https://www.reddit.com/user/Skourge01/)
     Email: oditorrinco222@gmail.com
