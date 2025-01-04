@@ -128,6 +128,95 @@ zram_file() {
     esac
 }
 
+#swapfile 
+swapfile() {
+    clear
+    echo "=== Configuração de Swapfile ==="
+    echo "1. 1GB"
+    echo "2. 2GB"
+    echo "3. 4GB"
+    echo "4. 8GB"
+    echo "5. 10GB"
+    echo "6. Voltar"
+    
+    read -p "Escolha uma opção: " swap_option
+    
+    case $swap_option in
+        1) swap_size=1024 ;;
+        2) swap_size=2048 ;;
+        3) swap_size=4096 ;;
+        4) swap_size=8192 ;;
+        5) swap_size=10240 ;;
+        6) return ;;
+        *) 
+            echo "Opção inválida!"
+            return
+            ;;
+    esac
+
+    # Verificar se já existe swapfile
+    if grep -q "/swapfile" /proc/swaps; then
+        echo "Desativando swapfile existente..."
+        sudo swapoff /swapfile
+        sudo rm -f /swapfile
+    fi
+
+    echo "Criando swapfile com ${swap_size}MB..."
+    
+    # Usar fallocate para criação mais rápida
+    sudo fallocate -l ${swap_size}M /swapfile
+    
+    # Configurar permissões corretas
+    sudo chmod 600 /swapfile
+    
+    # Detectar tipo de disco e otimizar
+    DISK_PATH=$(df -P /swapfile | awk 'NR==2 {print $1}' | sed 's/[0-9]*$//')
+    if [ -e "/sys/block/${DISK_PATH##*/}/queue/rotational" ]; then
+        if [ "$(cat /sys/block/${DISK_PATH##*/}/queue/rotational)" = "0" ]; then
+            # Configurações para SSD
+            echo "Detectado SSD, otimizando configurações..."
+            sudo mkswap -L swapfile /swapfile
+            sudo swapon -p 10 /swapfile
+            
+            # Criar ou atualizar configurações do kernel para SSD
+            sudo bash -c 'cat > /etc/sysctl.d/99-swapfile.conf << EOF
+vm.swappiness=10
+vm.page-cluster=0
+EOF'
+        else
+            # Configurações para HDD
+            echo "Detectado HDD, otimizando configurações..."
+            sudo mkswap -L swapfile /swapfile
+            sudo swapon -p 0 /swapfile
+            
+            # Criar ou atualizar configurações do kernel para HDD
+            sudo bash -c 'cat > /etc/sysctl.d/99-swapfile.conf << EOF
+vm.swappiness=30
+vm.page-cluster=3
+EOF'
+        fi
+    else
+        # Configuração padrão se não conseguir detectar
+        echo "Tipo de disco não detectado, usando configuração padrão..."
+        sudo mkswap -L swapfile /swapfile
+        sudo swapon -p 5 /swapfile
+    fi
+    
+    # Atualizar ou adicionar entrada no fstab
+    if ! grep -q "/swapfile" /etc/fstab; then
+        echo "/swapfile none swap defaults 0 0" | sudo tee -a /etc/fstab
+    fi
+    
+    # Aplicar configurações do kernel
+    sudo sysctl -p /etc/sysctl.d/99-swapfile.conf
+    
+    echo "Swapfile configurado com sucesso!"
+    echo "Status atual da memória:"
+    free -h
+    echo "Configurações do swap:"
+    swapon --show
+}
+
 # Menu principal
 while true; do
     clear
@@ -140,12 +229,14 @@ while true; do
 EOF
     echo "=== Menu Principal ==="
     echo "1. ZRAM"
-    echo "2. Sair"
+    echo "2. Swapfile" 
+    echo "3. Sair"
     read -p "Escolha uma opção: " opcao
     
     case $opcao in
         1) zram_file ;;
-        2) exit 0 ;;
+        2) swapfile ;;
+        3) exit 0 ;;
         *) echo "Opção inválida!" ;;
     esac
     
