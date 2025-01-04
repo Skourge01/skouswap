@@ -20,7 +20,7 @@ check_root "$@"
 zram_file() {
     clear
     echo "=== Configuração de ZRAM ==="
-    echo "1. Ativar ZRAM (Tamanho 256MB até 10GB)"
+    echo "1. Ativar ZRAM 50% da RAM"
     echo "2. Desativar ZRAM"
     echo "3. Voltar"
     
@@ -29,132 +29,90 @@ zram_file() {
     case $zram_option in
         1)
             clear
+            # Verificar se o zram-generator está instalado
+            if ! pacman -Qi zram-generator &> /dev/null; then
+                echo "zram-generator não está instalado. Tentando instalar..."
+                
+                # Atualizar banco de dados do pacman primeiro
+                sudo pacman -Sy
+                
+                # Tentar instalar o zram-generator
+                if ! sudo pacman -S --noconfirm zram-generator; then
+                    echo "Erro ao instalar zram-generator. Abortando..."
+                    return 1
+                fi
+            fi
+
             # Primeiro, verifica e remove ZRAM existente
             if grep -q "zram0" /proc/swaps; then
                 echo "Desativando ZRAM existente..."
-                sudo swapoff /dev/zram0
-                sudo rmmod zram
-                echo "ZRAM anterior removido."
+                sudo swapoff /dev/zram0 2>/dev/null || true
+                sudo systemctl stop systemd-zram-setup@zram0.service 2>/dev/null || true
             fi
 
-            echo "=== Selecione o tamanho do ZRAM (em MB) ==="
-            echo "1. 256MB"
-            echo "2. 512MB"
-            echo "3. 1024MB (1GB)"
-            echo "4. 2048MB (2GB)"
-            echo "5. 4096MB (4GB)"
-            echo "6. 6144MB (6GB)"
-            echo "7. 8192MB (8GB)"
-            echo "8. 10240MB (10GB)"
-            echo "9. Voltar"
+            # Parar serviços existentes e limpar completamente
+            echo "Parando serviços ZRAM existentes..."
+            sudo swapoff -a
+            sudo systemctl stop systemd-zram-setup@zram0.service 2>/dev/null || true
             
-            read -p "Escolha o tamanho: " size_option
+            # Forçar remoção do módulo zram
+            echo "Removendo módulo ZRAM..."
+            if lsmod | grep -q zram; then
+                sudo rmmod zram || true
+                sleep 2
+            fi
             
-            case $size_option in
-                1) zram_size=256 ;;
-                2) zram_size=512 ;;
-                3) zram_size=1024 ;;
-                4) zram_size=2048 ;;
-                5) zram_size=4096 ;;
-                6) zram_size=6144 ;;
-                7) zram_size=8192 ;;
-                8) zram_size=10240 ;;
-                9) return ;;
-                *)
-                    echo "Opção inválida!"
-                    return
-                    ;;
-            esac
-
-            # Ativar ZRAM
-            echo "Ativando ZRAM com ${zram_size}MB..."
+            # Carregar módulo limpo
+            echo "Carregando módulo ZRAM..."
             sudo modprobe zram
-            echo lz4 | sudo tee /sys/block/zram0/comp_algorithm
-            echo ${zram_size}M | sudo tee /sys/block/zram0/disksize
-            sudo mkswap /dev/zram0
+            sleep 2
+            
+            # Configurar ZRAM manualmente
+            echo "Configurando ZRAM..."
+            # Calcular exatamente 50% da RAM total em bytes
+            total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+            zram_size=$((total_ram_kb * 512)) # 50% da RAM (KB * 1024 / 2 = KB * 512)
+            
+            # Configurar número de streams baseado nos CPUs
+            echo $(nproc) | sudo tee /sys/block/zram0/max_comp_streams
+            
+            # Configurar algoritmo e tamanho
+            echo "zstd" | sudo tee /sys/block/zram0/comp_algorithm
+            echo $zram_size | sudo tee /sys/block/zram0/disksize
+            
+            # Criar e ativar swap
+            echo "Ativando swap ZRAM..."
+            sudo mkswap -f /dev/zram0
             sudo swapon -p 100 /dev/zram0
-            echo "ZRAM ativado com sucesso!"
 
-            # Criar serviço systemd para ativar ZRAM no boot
-            echo "Criando o serviço systemd para ZRAM..."
+            # Ajustar parâmetros do kernel para otimizar uso do ZRAM
+            echo 10 | sudo tee /proc/sys/vm/swappiness
+            echo 50 | sudo tee /proc/sys/vm/vfs_cache_pressure
 
-            # Criar o script de inicialização /usr/local/bin/zram-init.sh
-            sudo bash -c 'cat <<EOF > /usr/local/bin/zram-init.sh
-#!/bin/bash
-
-# Remover qualquer ZRAM existente
-swapoff /dev/zram0 2>/dev/null || true
-rmmod zram 2>/dev/null || true
-
-# Aguardar um momento para garantir que o módulo foi removido
-sleep 1
-
-# Carregar módulo (caso ainda não esteja carregado)
-modprobe zram
-
-# Configuração de ZRAM
-zram_size="'"$zram_size"'M"
-
-# Aguardar a criação do dispositivo
-while [ ! -e /dev/zram0 ]; do
-    sleep 1
-done
-
-# Configurar ZRAM
-echo lz4 > /sys/block/zram0/comp_algorithm
-echo \$zram_size > /sys/block/zram0/disksize
-
-# Criar e ativar swap
-mkswap -L zram0 /dev/zram0
-swapon -p 100 /dev/zram0
-
-exit 0
-EOF'
-
-            # Tornar o script executável
-            sudo chmod +x /usr/local/bin/zram-init.sh
-
-            # Garantir que o módulo zram seja carregado no boot
-            echo "zram" | sudo tee /etc/modules-load.d/zram.conf
-
-            # Modificar o serviço systemd
-            sudo bash -c 'cat <<EOF > /etc/systemd/system/zram-init.service
-[Unit]
-Description=Inicializa ZRAM
-DefaultDependencies=no
-Before=swap.target
-After=local-fs.target
-After=systemd-modules-load.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStartPre=/usr/bin/modprobe zram
-ExecStart=/usr/local/bin/zram-init.sh
-ExecStop=/usr/bin/swapoff /dev/zram0
-ExecStop=/usr/bin/rmmod zram
-
-[Install]
-WantedBy=swap.target
-EOF'
-
-            # Recarregar e reiniciar o serviço
-            sudo systemctl daemon-reload
-            sudo systemctl enable zram-init.service
-            sudo systemctl start zram-init.service
-
-            echo "ZRAM será iniciado automaticamente após o próximo reinício!"
+            # Verificar status final
+            echo "Status final do ZRAM:"
+            if grep -q "zram0" /proc/swaps; then
+                echo "ZRAM ativado com sucesso!"
+                echo "Tamanho configurado: $((zram_size / 1024 / 1024))MB"
+                swapon --show
+                echo "Algoritmo de compressão:"
+                cat /sys/block/zram0/comp_algorithm
+            else
+                echo "Falha ao ativar ZRAM"
+                echo "Logs do kernel:"
+                dmesg | tail -n 20
+                echo "Status do módulo zram:"
+                lsmod | grep zram
+            fi
             free -h
             ;;
         2)
             if grep -q "zram0" /proc/swaps; then
                 echo "Desativando ZRAM..."
-                sudo swapoff /dev/zram0
-                sudo rmmod zram
-                sudo systemctl disable zram-init.service
-                sudo rm -f /etc/systemd/system/zram-init.service
-                sudo rm -f /usr/local/bin/zram-init.sh
-                sudo rm -f /etc/modules-load.d/zram.conf
+                sudo swapoff /dev/zram0 2>/dev/null || true
+                sudo systemctl stop systemd-zram-setup@zram0.service
+                sudo rm -f /etc/systemd/zram-generator.conf
+                sudo rm -f /etc/sysctl.d/99-zram.conf
                 sudo systemctl daemon-reload
                 echo "ZRAM desativado com sucesso!"
             else
