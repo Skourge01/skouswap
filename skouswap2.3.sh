@@ -1,18 +1,28 @@
 #!/bin/bash
 
-# Verificar se está rodando como root
-if [ "$EUID" -ne 0 ]; then 
-    echo "Este script precisa ser executado como root"
-    exit 1
-fi
+# Função para verificar se está rodando como root e pedir permissão se necessário
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        echo "Este script precisa ser executado como root."
+        read -p "Deseja executar como root? (s/n): " answer
+        if [[ "$answer" =~ ^[Ss]$ ]]; then
+            sudo "$0" "$@"
+            exit 0
+        else
+            exit 1
+        fi
+    fi
+}
+
+# Chama a função de verificação de root
+check_root "$@"
 
 zram_file() {
     clear
-    echo "=== Configuração de ZRAM ou Swapfile ==="
-    echo "1. Ativar ZRAM"
-    echo "2. Ativar Swapfile"
-    echo "3. Desativar ZRAM"
-    echo "4. Voltar"
+    echo "=== Configuração de ZRAM ==="
+    echo "1. Ativar ZRAM (Tamanho 256MB até 10GB)"
+    echo "2. Desativar ZRAM"
+    echo "3. Voltar"
     
     read -p "Escolha uma opção: " zram_option
     
@@ -27,28 +37,28 @@ zram_file() {
                 echo "ZRAM anterior removido."
             fi
 
-            echo "=== Selecione o tamanho do ZRAM ==="
-            echo "1. 2GB"
-            echo "2. 4GB"
-            echo "3. 6GB"
-            echo "4. 8GB"
-            echo "5. 10GB"
-            echo "6. 12GB"
-            echo "7. 14GB"
-            echo "8. 16GB"
+            echo "=== Selecione o tamanho do ZRAM (em MB) ==="
+            echo "1. 256MB"
+            echo "2. 512MB"
+            echo "3. 1024MB (1GB)"
+            echo "4. 2048MB (2GB)"
+            echo "5. 4096MB (4GB)"
+            echo "6. 6144MB (6GB)"
+            echo "7. 8192MB (8GB)"
+            echo "8. 10240MB (10GB)"
             echo "9. Voltar"
             
             read -p "Escolha o tamanho: " size_option
             
             case $size_option in
-                1) zram_size=2G ;;
-                2) zram_size=4G ;;
-                3) zram_size=6G ;;
-                4) zram_size=8G ;;
-                5) zram_size=10G ;;
-                6) zram_size=12G ;;
-                7) zram_size=14G ;;
-                8) zram_size=16G ;;
+                1) zram_size=256 ;;
+                2) zram_size=512 ;;
+                3) zram_size=1024 ;;
+                4) zram_size=2048 ;;
+                5) zram_size=4096 ;;
+                6) zram_size=6144 ;;
+                7) zram_size=8192 ;;
+                8) zram_size=10240 ;;
                 9) return ;;
                 *)
                     echo "Opção inválida!"
@@ -57,10 +67,10 @@ zram_file() {
             esac
 
             # Ativar ZRAM
-            echo "Ativando ZRAM com ${zram_size}..."
+            echo "Ativando ZRAM com ${zram_size}MB..."
             sudo modprobe zram
             echo lz4 | sudo tee /sys/block/zram0/comp_algorithm
-            echo $zram_size | sudo tee /sys/block/zram0/disksize
+            echo ${zram_size}M | sudo tee /sys/block/zram0/disksize
             sudo mkswap /dev/zram0
             sudo swapon -p 100 /dev/zram0
             echo "ZRAM ativado com sucesso!"
@@ -83,11 +93,7 @@ sleep 1
 modprobe zram
 
 # Configuração de ZRAM
-zram_size="'"$zram_size"'"
-
-# Converter tamanho de GB para bytes
-size_num=\${zram_size//[!0-9]/}
-size_bytes=\$((size_num * 1024 * 1024 * 1024))
+zram_size="'"$zram_size"'M"
 
 # Aguardar a criação do dispositivo
 while [ ! -e /dev/zram0 ]; do
@@ -96,7 +102,7 @@ done
 
 # Configurar ZRAM
 echo lz4 > /sys/block/zram0/comp_algorithm
-echo \$size_bytes > /sys/block/zram0/disksize
+echo \$zram_size > /sys/block/zram0/disksize
 
 # Criar e ativar swap
 mkswap -L zram0 /dev/zram0
@@ -141,24 +147,6 @@ EOF'
             free -h
             ;;
         2)
-            clear
-            echo "Ativando Swapfile..."
-            # Definir o tamanho do swapfile
-            read -p "Escolha o tamanho do swapfile (exemplo: 4G): " swap_size
-            
-            # Criar o arquivo de swap
-            sudo fallocate -l $swap_size /swapfile
-            sudo chmod 600 /swapfile
-            sudo mkswap /swapfile
-            sudo swapon /swapfile
-
-            # Adicionar swapfile no fstab
-            sudo bash -c 'echo "/swapfile none swap sw 0 0" >> /etc/fstab'
-
-            echo "Swapfile de $swap_size ativado com sucesso!"
-            free -h
-            ;;
-        3)
             if grep -q "zram0" /proc/swaps; then
                 echo "Desativando ZRAM..."
                 sudo swapoff /dev/zram0
@@ -173,7 +161,7 @@ EOF'
                 echo "ZRAM não está ativo!"
             fi
             ;;
-        4)
+        3)
             return
             ;;
         *)
@@ -186,15 +174,14 @@ EOF'
 while true; do
     clear
     cat << "EOF"
- ____  _                                      ____    ____  
-/ ___|| | _____  _   _ _____      ____ _ _ __|___ \  |___ \ 
-\___ \| |/ / _ \| | | / __\ \ /\ / / _` | '_ \ __) |   __) |
- ___) |   < (_) | |_| \__ \\ V  V / (_| | |_) / __/ _ / __/ 
-|____/|_|\_\___/ \__,_|___/ \_/\_/ \__,_| .__/_____(_)_____|
-                                        |_|                  
+ ____  _  _____  _   _ ______        ___    ____ ____    _____
+/ ___|| |/ / _ \| | | / ___\ \      / / \  |  _ \___ \  |___ /
+\___ \| ' / | | | | | \___ \\ \ /\ / / _ \ | |_) |__) |   |_ \
+ ___) | . \ |_| | |_| |___) |\ V  V / ___ \|  __// __/ _ ___) |
+|____/|_|\_\___/ \___/|____/  \_/\_/_/   \_\_|  |_____(_)____/
 EOF
     echo "=== Menu Principal ==="
-    echo "1. ZRAM ou Swapfile"
+    echo "1. ZRAM"
     echo "2. Sair"
     read -p "Escolha uma opção: " opcao
     
