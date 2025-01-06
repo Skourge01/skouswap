@@ -4,7 +4,7 @@ skouswap é um script projetado para facilitar a criação e gerenciamento de sw
 
 Instalação:
 
-Acesse a nova [release do skouswap no GitHub.](https://github.com/Skourge01/skouswap/releases/tag/skouswap)
+Acesse a nova [release do skouswap no GitHub.](https://github.com/Skourge01/skouswap/releases)
 Baixe o script mais recente.
 Dê permissão de execução ao script:
 
