@@ -194,7 +194,7 @@ create_swapfile() {
 }
 
 submenu_swapfile() {
-    local sizes=("256MB" "512MB" "1GB" "2GB" "4GB" "6GB" "8GB" "10GB")
+    local sizes={"256MB" "512MB" "1GB" "2GB" "4GB" "6GB" "8GB" "10GB"}
     local size_values=(256 512 1024 2048 4096 6144 8192 10240)
     
     OPTION=$(printf "%s\n" "${sizes[@]}" | fzf --prompt="Escolha o tamanho do swapfile: ")
