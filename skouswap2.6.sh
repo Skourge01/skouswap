@@ -2,6 +2,7 @@
 # skouswap2.6.sh 
 # agora apenas ira dar cat com zram generator 
 # mudando apenas um valor e concluindo 
+# tambem disponibilidade para debian based distros
 check_root() {
     if [ "$EUID" -ne 0 ]; then
         echo "Este script precisa ser executado como root."
