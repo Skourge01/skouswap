@@ -8,13 +8,15 @@ check_root() {
         echo "Este script precisa ser executado como root."
         read -p "Deseja executar como root? (s/n): " answer
         if [[ "$answer" =~ ^[Ss]$ ]]; then
-            sudo "$0" "$@"
+            # Chama o script novamente com sudo e passa os argumentos, se houver
+            sudo "$0" "${@}"   # "$@" é seguro de usar aqui, já que são passados os argumentos do script
             exit 0
         else
             exit 1
         fi
     fi
 }
+
 gerenciador_pacotes() {
     if command -v apt-get > /dev/null; then
         # Verifica se é Ubuntu ou Debian
