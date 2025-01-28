@@ -1,4 +1,4 @@
-#/bin/bash 
+#!/bin/bash 
 # skouswap2.6.sh 
 # disponibilidade para debian based
 # agora apenas ira dar cat com zram generator 
