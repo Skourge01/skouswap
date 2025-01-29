@@ -17,6 +17,16 @@ check_root() {
     fi
 }
 
+check_fzf () {
+    if command -v fzf &> /dev/null; then 
+        read -p "O fzf nao esta instalado. Deseja instala-lo? (s/n):" 
+        if [[ "$choice" == [sS]]]; then 
+            sudo pacman -S fzf
+        else 
+            echo "O fzf ja esta instalado." 
+        fi 
+}
+
 gerenciador_pacotes() {
     if command -v apt-get > /dev/null; then
         # Verifica se é Ubuntu ou Debian
@@ -221,6 +231,7 @@ submenu_swapfile() {
 check_root 
 gerenciador_pacotes
 instalar_zram_generator
+check_fzf 
 # Loop principal do menu
 while true; do
     OPTION=$(echo -e "ZRAM\nSwapfile\nSair" | fzf --prompt="Escolha uma opção: ")
