@@ -18,14 +18,18 @@ check_root() {
 }
 
 check_fzf () {
-    if command -v fzf &> /dev/null; then 
-        read -p "O fzf nao esta instalado. Deseja instala-lo? (s/n):" 
-        if [[ "$choice" == [sS]]]; then 
+    if ! command -v fzf &> /dev/null; then 
+        read -p "O fzf não está instalado. Deseja instalá-lo? (s/n): " choice
+        if [[ "$choice" == [sS] ]]; then 
             sudo pacman -S fzf
         else 
-            echo "O fzf ja esta instalado." 
+            echo "Instalação do fzf cancelada." 
         fi 
+    else
+        echo "O fzf já está instalado."
+    fi
 }
+
 
 gerenciador_pacotes() {
     if command -v apt-get > /dev/null; then
