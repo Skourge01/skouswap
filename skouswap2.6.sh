@@ -21,7 +21,11 @@ check_fzf () {
     if ! command -v fzf &> /dev/null; then 
         read -p "O fzf não está instalado. Deseja instalá-lo? (s/n): " choice
         if [[ "$choice" == [sS] ]]; then 
-            sudo pacman -S fzf
+            if [[ -f /etc/arch-release ]]; then
+                sudo pacman -S fzf
+            elif [[ -f /etc/debian_version ]]; then
+                sudo apt update && sudo apt install fzf
+            fi
         else 
             echo "Instalação do fzf cancelada." 
         fi 
@@ -29,6 +33,7 @@ check_fzf () {
         echo "O fzf já está instalado."
     fi
 }
+
 
 
 gerenciador_pacotes() {
