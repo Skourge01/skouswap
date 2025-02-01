@@ -16,7 +16,6 @@ check_root() {
         fi
     fi
 }
-
 check_fzf () {
     if ! command -v fzf &> /dev/null; then 
         read -p "O fzf não está instalado. Deseja instalá-lo? (s/n): " choice
@@ -33,8 +32,6 @@ check_fzf () {
         echo "O fzf já está instalado."
     fi
 }
-
-
 
 gerenciador_pacotes() {
     if command -v apt-get > /dev/null; then
@@ -85,7 +82,6 @@ instalar_zram_generator() {
             ;;
     esac
 }
-
 # Funções para cálculo específico de cada porcentagem
 calculate_50_percent() {
     local ram_total=$1
@@ -101,7 +97,6 @@ calculate_100_percent() {
     local ram_total=$1
     echo $ram_total
 }
-
 # Função principal para calcular o tamanho do ZRAM
 calculate_zram_size() {
     local ram_total=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
@@ -122,7 +117,6 @@ calculate_zram_size() {
             ;;
     esac
 }
-
 # Função para atualizar o arquivo de configuração
 update_zram_config() {
     local percentage=$1
@@ -154,7 +148,6 @@ update_zram_config() {
     echo "Arquivo atualizado com sucesso."
     sleep 2
 }
-
 # Submenu de escolha de porcentagem
 submenu_zram() {
     OPTION=$(echo -e "50%\n75%\n100%" | fzf --prompt="Escolha a porcentagem de ZRAM: ")
@@ -175,7 +168,6 @@ submenu_zram() {
             ;;
     esac
 }
-
 create_swapfile() {
     local size_mb=$1
     local swapfile="/swapfile"
@@ -214,7 +206,6 @@ create_swapfile() {
     free -h | grep Swap
     sleep 2
 }
-
 submenu_swapfile() {
     local sizes=("256MB" "512MB" "1GB" "2GB" "4GB" "6GB" "8GB" "10GB")
     local size_values=(256 512 1024 2048 4096 6144 8192 10240)
@@ -236,7 +227,6 @@ submenu_swapfile() {
             ;;
     esac
 }
-
 check_root 
 gerenciador_pacotes
 instalar_zram_generator
@@ -262,6 +252,3 @@ while true; do
             ;;
     esac
 done
-
-
-
