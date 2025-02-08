@@ -1,68 +1,69 @@
 ## skouswap
 
-skouswap é um script projetado para facilitar a criação e gerenciamento de swapfiles no Linux, utilizando uma interface gráfica simples e intuitiva. O objetivo do script é proporcionar uma maneira fácil de configurar o swap em sistemas Linux, com suporte a múltiplas distribuições e a possibilidade de otimizar o uso de memória.
+skouswap is a script designed to facilitate the creation and management of swapfiles on Linux, using a simple and intuitive graphical interface. The goal of the script is to provide an easy way to configure swap on Linux systems, with support for multiple distributions and the possibility of optimizing memory usage.
 
-## Instalação:
-- ultilizar a versão estavel na release mais nova: https://github.com/Skourge01/skouswap/releases/tag/2.6
-- ultilizar a versão testing via commit: https://github.com/Skourge01/skouswap/commits/main/
+## Installation:
+- use the stable version in the latest release: https://github.com/Skourge01/skouswap/releases/tag/2.6
+- use the testing version via commit: https://github.com/Skourge01/skouswap/commits/main/
 
 ### Tutorial
-- ao instalar o script ele deve ser iniciado via linha de comando CLI use seu terminal preferido
-- vá para a pasta onde baixou o script com
+- when installing the script it must be started via CLI command line use your preferred terminal
+- go to the folder where you downloaded the script with
 ```
 cd name_folder/skouswap
 ```
-- defina como chmod o script dentro de skouswap/
+- set as chmod the script inside skouswap/
 ```
 chmod +x skouswap(version).sh
 ```
-- execute o script
+- run the script
 ```
-./skouswap 
+./skouswap
 ```
-### Debian problems 
-- no debian tem alguns problemas de permisão de usuario
-- ultilize:
+### Debian problems
+- in Debian there are some user permission problems
+- use:
 ```
-su 
+su
 ```
-- ensira a sua senha
-- execute o script
-## Como usar o script 
-- depois de instalar as dependencias do script
-- ira aparecer uma interface em fzf dizendo;
+- enter your password
+- run the script
+## How to use the script
+- after installing the script dependencies
+- an interface in fzf will appear saying;
 zram
 swapfile
-## ATENÇÃO
-- apos a execução do script reinicie o sistema para que as alterações sejam feitas automaticamente
+## ATTENTION
+- after running the script, restart the system so that the changes are made automatically
 ```
 sudo reboot
 ```
-## Zram 
-- O ZRAM é uma tecnologia que cria um disco virtual na RAM e usa compressão para armazenar dados. Ele é útil para sistemas com pouca memória, pois permite que mais dados sejam armazenados na RAM comprimida, reduzindo o uso de swap no disco e melhorando o desempenho
-### Vantagens:
-- Mais rápido que a swap tradicional, pois a RAM é mais rápida que um SSD/HD.
-- Reduz escrita no disco, aumentando a vida útil de SSDs.
-- Pode melhorar o desempenho de sistemas com pouca RAM.
+## Zram
+- ZRAM is a technology that creates a virtual disk in RAM and uses compression to store data. It is useful for systems with little memory, as it allows more data to be stored in compressed RAM, reducing the use of swap on the disk and improving performance
+### Advantages:
+- Faster than traditional swap, as RAM is faster than an SSD/HD.
+- Reduces writing to the disk, increasing the lifespan of SSDs.
+- Can improve the performance of systems with little RAM.
 
-### Desvantagens:
-- Consome parte da RAM.
-- Pode aumentar o uso da CPU devido à compressão/descompressão.
+### Disadvantages:
+- Consumes part of the RAM. - May increase CPU usage due to compression/decompression.
 ## Swapfile
-O Swapfile é um arquivo dentro do sistema de arquivos que age como memória virtual, funcionando da mesma forma que uma partição swap tradicional.
+A Swapfile is a file within the file system that acts as virtual memory, working in the same way as a traditional swap partition.
 
-## Vantagens:
-- Mais flexível que uma partição swap (pode ser redimensionado facilmente).
-- Não precisa de uma partição dedicada.
+## Advantages:
+- More flexible than a swap partition (can be easily resized).
+- Does not require a dedicated partition.
 
-## Desvantagens:
-- Mais lento que o ZRAM, pois usa o disco.
-- Pode degradar a performance se o sistema estiver constantemente usando swap.
+## Disadvantages:
+- Slower than ZRAM, as it uses disk space.
+- May degrade performance if the system is constantly using swap.
 
-## Quando usar?
-- ZRAM → Melhor para desempenho em sistemas com pouca RAM.
-- Swapfile → Melhor para estabilidade em sistemas com mais RAM, mas sem swap suficiente.
+## When to use?
+- ZRAM → Best for performance on systems with little RAM.
+- Swapfile → Best for stability on systems with more RAM but not enough swap.
 
-Contato:
+Contact:
 Reddit: [Skourge01](https://www.reddit.com/user/Skourge01/)
 Email: oditorrinco222@gmail.com
+Enviar feedback
+Resultados de tradução disponíveis
