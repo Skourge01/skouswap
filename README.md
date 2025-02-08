@@ -33,7 +33,11 @@ su
 - ira aparecer uma interface em fzf dizendo;
 zram
 swapfile
-
+## ATENÇÃO
+- apos a execução do script reinicie o sistema para que as alterações sejam feitas automaticamente
+```
+sudo reboot
+```
 ## Zram 
 - O ZRAM é uma tecnologia que cria um disco virtual na RAM e usa compressão para armazenar dados. Ele é útil para sistemas com pouca memória, pois permite que mais dados sejam armazenados na RAM comprimida, reduzindo o uso de swap no disco e melhorando o desempenho
 ### Vantagens:
