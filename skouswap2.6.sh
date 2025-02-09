@@ -173,12 +173,12 @@ create_swapfile() {
 
     # Disable and remove existing swapfile
     if swapon --show | grep -q "$swapfile"; then
-        echo "Desativando swapfile existente..."
+        echo "Disabling existing swapfile..."
         swapoff "$swapfile" 2>/dev/null
     fi
     
     if [ -f "$swapfile" ]; then
-        echo "Removendo swapfile antigo..."
+        echo "Removing old swapfile..."
         rm -f "$swapfile"
     fi
 
@@ -200,8 +200,8 @@ create_swapfile() {
         echo "$swapfile none swap defaults 0 0" >> /etc/fstab
     fi
     
-    echo "Swapfile criado e ativado com sucesso."
-    echo "Tamanho atual do swap:"
+    echo "Swapfile created and activated successfully."
+    echo "Current swap size:"
     free -h | grep Swap
     sleep 2
 }
@@ -209,7 +209,7 @@ submenu_swapfile() {
     local sizes=("256MB" "512MB" "1GB" "2GB" "4GB" "6GB" "8GB" "10GB")
     local size_values=(256 512 1024 2048 4096 6144 8192 10240)
     
-    OPTION=$(printf "%s\n" "${sizes[@]}" | fzf --prompt="Escolha o tamanho do swapfile: ")
+    OPTION=$(printf "%s\n" "${sizes[@]}" | fzf --prompt="Choose swapfile size: ")
     
     case $OPTION in
         "256MB")  create_swapfile 256 ;;
@@ -221,7 +221,7 @@ submenu_swapfile() {
         "8GB")    create_swapfile 8192 ;;
         "10GB")   create_swapfile 10240 ;;
         *)
-            echo "Opção inválida."
+            echo "Invalid option."
             sleep 2
             ;;
     esac
@@ -230,7 +230,18 @@ check_root
 gerenciador_pacotes
 instalar_zram_generator
 check_fzf 
-# Main menu loop
+# Função para perguntar sobre reboot
+reboot_prompt() {
+    read -p "To change the changes do you want to restart the system? (y/n): " response
+    if [[ "$resposta" =~ ^[Yy]$ ]]; then
+        echo "Restarting the system..."
+        sudo reboot
+    else
+        echo "the system will not restart."
+    fi
+}
+
+# Loop do menu principal
 while true; do
     OPTION=$(echo -e "ZRAM\nSwapfile\nSair" | fzf --prompt="Escolha uma opção: ")
 
@@ -243,6 +254,7 @@ while true; do
             ;;
         "Sair")
             echo "Saindo..."
+            reboot_prompt
             break
             ;;
         *)
