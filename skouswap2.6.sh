@@ -1,15 +1,14 @@
 #!/bin/bash 
 # skouswap2.6.sh 
-# disponibilidade para debian based
-# agora apenas ira dar cat com zram generator 
-# mudando apenas um valor e concluindo 
+# availability for debian based
+# now just give cat with zram generator
 check_root() {
     if [ "$EUID" -ne 0 ]; then
         echo "Este script precisa ser executado como root."
         read -p "Deseja executar como root? (s/n): " answer
         if [[ "$answer" =~ ^[Ss]$ ]]; then
-            # Chama o script novamente com sudo e passa os argumentos, se houver
-            sudo "$0" "${@}"   # "$@" é seguro de usar aqui, já que são passados os argumentos do script
+            #  Call the script again with sudo and pass the arguments if any
+            sudo "$0" "${@}"   # "$@" is safe to use here, as script arguments are passed
             exit 0
         else
             exit 1
@@ -35,7 +34,7 @@ check_fzf () {
 
 gerenciador_pacotes() {
     if command -v apt-get > /dev/null; then
-        # Verifica se é Ubuntu ou Debian
+        # Check if it is Ubuntu or Debian
         if [ -f /etc/debian_version ]; then
             echo "APT"
         else
@@ -59,7 +58,7 @@ instalar_zram_generator() {
                 apt-get update
                 apt-get install -y zram-tools
                 
-                # Configuração específica para Debian/Ubuntu
+                # Specific configuration for Debian/Ubuntu
                 if [ -f /etc/default/zramswap ]; then
                     sed -i 's/^ALGO=.*/ALGO=lz4/' /etc/default/zramswap
                     systemctl restart zramswap
@@ -82,7 +81,7 @@ instalar_zram_generator() {
             ;;
     esac
 }
-# Funções para cálculo específico de cada porcentagem
+# Functions for specific calculation of each percentage
 calculate_50_percent() {
     local ram_total=$1
     echo $(( ram_total / 2 ))
@@ -97,7 +96,7 @@ calculate_100_percent() {
     local ram_total=$1
     echo $ram_total
 }
-# Função principal para calcular o tamanho do ZRAM
+# Main function to calculate ZRAM size
 calculate_zram_size() {
     local ram_total=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
     local percentage=$1
@@ -117,7 +116,7 @@ calculate_zram_size() {
             ;;
     esac
 }
-# Função para atualizar o arquivo de configuração
+#Function to update the configuration file
 update_zram_config() {
     local percentage=$1
     ZRAM_SIZE=$(calculate_zram_size $percentage)
@@ -131,14 +130,14 @@ update_zram_config() {
     
     case $gerenciador in
         APT)
-            # Configuração para Debian/Ubuntu
+            # Configuration for Debian/Ubuntu
             echo "Atualizando o arquivo de configuração do ZRAM para $ZRAM_SIZE MB..."
             echo "PERCENT=$percentage" | sudo tee /etc/default/zramswap > /dev/null
             echo "ALGO=lz4" | sudo tee -a /etc/default/zramswap > /dev/null
             systemctl restart zramswap
             ;;
         Pacman)
-            # Configuração para Arch Linux
+            # Configuration for archlinux 
             echo "Atualizando o arquivo de configuração do ZRAM para $ZRAM_SIZE MB..."
             echo -e "[zram0]\nzram-size = $ZRAM_SIZE" | sudo tee /etc/systemd/zram-generator.conf > /dev/null
             systemctl restart systemd-zram-setup@zram0
@@ -148,7 +147,7 @@ update_zram_config() {
     echo "Arquivo atualizado com sucesso."
     sleep 2
 }
-# Submenu de escolha de porcentagem
+# Percentage choice submenu
 submenu_zram() {
     OPTION=$(echo -e "50%\n75%\n100%" | fzf --prompt="Escolha a porcentagem de ZRAM: ")
 
@@ -172,7 +171,7 @@ create_swapfile() {
     local size_mb=$1
     local swapfile="/swapfile"
 
-    # Desativar e remover swapfile existente
+    # Disable and remove existing swapfile
     if swapon --show | grep -q "$swapfile"; then
         echo "Desativando swapfile existente..."
         swapoff "$swapfile" 2>/dev/null
@@ -184,7 +183,7 @@ create_swapfile() {
     fi
 
     echo "Criando swapfile de ${size_mb}MB..."
-    # Criar novo swapfile com fallocate (mais rápido) ou dd como fallback
+    # Create new swapfile with fallocate (faster) or dd as fallback
     if command -v fallocate >/dev/null 2>&1; then
         fallocate -l ${size_mb}M "$swapfile" || \
         dd if=/dev/zero of="$swapfile" bs=1M count="$size_mb" status=progress
@@ -196,7 +195,7 @@ create_swapfile() {
     mkswap "$swapfile"
     swapon "$swapfile"
     
-    # Atualizar /etc/fstab
+    # update /etc/fstab
     if ! grep -q "$swapfile" /etc/fstab; then
         echo "$swapfile none swap defaults 0 0" >> /etc/fstab
     fi
@@ -231,7 +230,7 @@ check_root
 gerenciador_pacotes
 instalar_zram_generator
 check_fzf 
-# Loop principal do menu
+# Main menu loop
 while true; do
     OPTION=$(echo -e "ZRAM\nSwapfile\nSair" | fzf --prompt="Escolha uma opção: ")
 
