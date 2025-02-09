@@ -7,10 +7,15 @@
 check_root() {
     if [ "$EUID" -ne 0 ]; then
         echo "This script must be run as root."
-        read -p "Do you want to run as root? (y/n): " answer
+        read -r -p "Do you want to re-execute the script with sudo? (y/n): " answer
         if [[ "$answer" =~ ^[Yy]$ ]]; then
             # Call the script again with sudo and pass any arguments
-            sudo "$0" "${@}" # "$@" is safe here since these are the script arguments
+            if sudo -v; then
+                sudo "$0"
+            else
+                echo "You do not have sudo privileges."
+                exit 1
+            fi
             exit 0
         else
             exit 1
@@ -53,7 +58,8 @@ package_manager() {
 }
 
 install_zram_generator() {
-    local manager=$(package_manager)
+    local manager
+    manager=$(package_manager)
 
     case $manager in
     APT)
@@ -104,7 +110,8 @@ calculate_100_percent() {
 
 # Main function to calculate the ZRAM size
 calculate_zram_size() {
-    local ram_total=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+    local ram_total
+    ram_total=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
     local percentage=$1
 
     case $percentage in
@@ -133,7 +140,8 @@ update_zram_config() {
         return
     fi
 
-    local manager=$(package_manager)
+    local manager
+    manager=$(package_manager)
 
     case $manager in
     APT)
@@ -221,20 +229,16 @@ submenu_swapfile() {
 
     OPTION=$(printf "%s\n" "${sizes[@]}" | fzf --prompt="Choose the swapfile size: ")
 
-    case $OPTION in
-    "256MB") create_swapfile 256 ;;
-    "512MB") create_swapfile 512 ;;
-    "1GB") create_swapfile 1024 ;;
-    "2GB") create_swapfile 2048 ;;
-    "4GB") create_swapfile 4096 ;;
-    "6GB") create_swapfile 6144 ;;
-    "8GB") create_swapfile 8192 ;;
-    "10GB") create_swapfile 10240 ;;
-    *)
+    local selected_index
+    selected_index=$(printf "%s\n" "${sizes[@]}" | grep -n -m 1 -w "$OPTION" | cut -d':' -f1)
+
+    if [[ -n "$selected_index" ]]; then
+        local size=${size_values[$((selected_index - 1))]}
+        create_swapfile "$size"
+    else
         echo "Invalid option."
         sleep 2
-        ;;
-    esac
+    fi
 }
 
 check_root
