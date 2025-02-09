@@ -1,254 +1,265 @@
-#!/bin/bash 
-# skouswap2.6.sh 
-# disponibilidade para debian based
-# agora apenas ira dar cat com zram generator 
-# mudando apenas um valor e concluindo 
+#!/bin/bash
+# skouswap2.6.sh
+# Available for Debian-based systems
+# Now it will simply display with zram generator,
+# changing just one value and finishing
+
 check_root() {
     if [ "$EUID" -ne 0 ]; then
-        echo "Este script precisa ser executado como root."
-        read -p "Deseja executar como root? (s/n): " answer
-        if [[ "$answer" =~ ^[Ss]$ ]]; then
-            # Chama o script novamente com sudo e passa os argumentos, se houver
-            sudo "$0" "${@}"   # "$@" é seguro de usar aqui, já que são passados os argumentos do script
+        echo "This script must be run as root."
+        read -p "Do you want to run as root? (y/n): " answer
+        if [[ "$answer" =~ ^[Yy]$ ]]; then
+            # Call the script again with sudo and pass any arguments
+            sudo "$0" "${@}" # "$@" is safe here since these are the script arguments
             exit 0
         else
             exit 1
         fi
     fi
 }
-check_fzf () {
-    if ! command -v fzf &> /dev/null; then 
-        read -p "O fzf não está instalado. Deseja instalá-lo? (s/n): " choice
-        if [[ "$choice" == [sS] ]]; then 
+
+check_fzf() {
+    if ! command -v fzf &>/dev/null; then
+        read -p "fzf is not installed. Do you want to install it? (y/n): " choice
+        if [[ "$choice" == [yY] ]]; then
             if [[ -f /etc/arch-release ]]; then
                 sudo pacman -S fzf
             elif [[ -f /etc/debian_version ]]; then
                 sudo apt update && sudo apt install fzf
             fi
-        else 
-            echo "Instalação do fzf cancelada." 
-        fi 
+        else
+            echo "fzf installation cancelled."
+        fi
     else
-        echo "O fzf já está instalado."
+        echo "fzf is already installed."
     fi
 }
 
-gerenciador_pacotes() {
-    if command -v apt-get > /dev/null; then
-        # Verifica se é Ubuntu ou Debian
+package_manager() {
+    if command -v apt-get >/dev/null; then
+        # Check if it is Ubuntu or Debian
         if [ -f /etc/debian_version ]; then
             echo "APT"
         else
-            echo "Gerenciador de pacotes não suportado."
+            echo "Package manager not supported."
             exit 1
         fi
-    elif command -v pacman > /dev/null; then
+    elif command -v pacman >/dev/null; then
         echo "Pacman"
     else
-        echo "Gerenciador de pacotes não suportado."
+        echo "Package manager not supported."
         exit 1
     fi
 }
-instalar_zram_generator() {
-    local gerenciador=$(gerenciador_pacotes)
 
-    case $gerenciador in
-        APT)
-            if ! dpkg -l | grep -q "zram-tools"; then
-                echo "Instalando zram-tools..."
-                apt-get update
-                apt-get install -y zram-tools
-                
-                # Configuração específica para Debian/Ubuntu
-                if [ -f /etc/default/zramswap ]; then
-                    sed -i 's/^ALGO=.*/ALGO=lz4/' /etc/default/zramswap
-                    systemctl restart zramswap
-                fi
-            else
-                echo "zram-tools já está instalado."
+install_zram_generator() {
+    local manager=$(package_manager)
+
+    case $manager in
+    APT)
+        if ! dpkg -l | grep -q "zram-tools"; then
+            echo "Installing zram-tools..."
+            apt-get update
+            apt-get install -y zram-tools
+
+            # Specific configuration for Debian/Ubuntu
+            if [ -f /etc/default/zramswap ]; then
+                sed -i 's/^ALGO=.*/ALGO=lz4/' /etc/default/zramswap
+                systemctl restart zramswap
             fi
-            ;;
-        Pacman)
-            if ! pacman -Qi zram-generator &> /dev/null; then
-                echo "Instalando zram-generator..."
-                pacman -Sy --noconfirm zram-generator
-            else
-                echo "zram-generator já está instalado."
-            fi
-            ;;
-        *)
-            echo "Gerenciador de pacotes não suportado."
-            exit 1
-            ;;
+        else
+            echo "zram-tools is already installed."
+        fi
+        ;;
+    Pacman)
+        if ! pacman -Qi zram-generator &>/dev/null; then
+            echo "Installing zram-generator..."
+            pacman -Sy --noconfirm zram-generator
+        else
+            echo "zram-generator is already installed."
+        fi
+        ;;
+    *)
+        echo "Package manager not supported."
+        exit 1
+        ;;
     esac
 }
-# Funções para cálculo específico de cada porcentagem
+
+# Functions for specific percentage calculations
 calculate_50_percent() {
     local ram_total=$1
-    echo $(( ram_total / 2 ))
+    echo $((ram_total / 2))
 }
 
 calculate_75_percent() {
     local ram_total=$1
-    echo $(( (ram_total * 3) / 4 ))
+    echo $(((ram_total * 3) / 4))
 }
 
 calculate_100_percent() {
     local ram_total=$1
     echo $ram_total
 }
-# Função principal para calcular o tamanho do ZRAM
+
+# Main function to calculate the ZRAM size
 calculate_zram_size() {
     local ram_total=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
     local percentage=$1
-    
+
     case $percentage in
-        50)
-            calculate_50_percent $ram_total
-            ;;
-        75)
-            calculate_75_percent $ram_total
-            ;;
-        100)
-            calculate_100_percent $ram_total
-            ;;
-        *)
-            echo 0
-            ;;
+    50)
+        calculate_50_percent $ram_total
+        ;;
+    75)
+        calculate_75_percent $ram_total
+        ;;
+    100)
+        calculate_100_percent $ram_total
+        ;;
+    *)
+        echo 0
+        ;;
     esac
 }
-# Função para atualizar o arquivo de configuração
+
+# Function to update the configuration file
 update_zram_config() {
     local percentage=$1
     ZRAM_SIZE=$(calculate_zram_size $percentage)
-    
+
     if [ "$ZRAM_SIZE" -eq 0 ]; then
-        echo "Opção inválida."
+        echo "Invalid option."
         return
     fi
 
-    local gerenciador=$(gerenciador_pacotes)
-    
-    case $gerenciador in
-        APT)
-            # Configuração para Debian/Ubuntu
-            echo "Atualizando o arquivo de configuração do ZRAM para $ZRAM_SIZE MB..."
-            echo "PERCENT=$percentage" | sudo tee /etc/default/zramswap > /dev/null
-            echo "ALGO=lz4" | sudo tee -a /etc/default/zramswap > /dev/null
-            systemctl restart zramswap
-            ;;
-        Pacman)
-            # Configuração para Arch Linux
-            echo "Atualizando o arquivo de configuração do ZRAM para $ZRAM_SIZE MB..."
-            echo -e "[zram0]\nzram-size = $ZRAM_SIZE" | sudo tee /etc/systemd/zram-generator.conf > /dev/null
-            systemctl restart systemd-zram-setup@zram0
-            ;;
+    local manager=$(package_manager)
+
+    case $manager in
+    APT)
+        # Configuration for Debian/Ubuntu
+        echo "Updating the ZRAM configuration file to $ZRAM_SIZE MB..."
+        echo "PERCENT=$percentage" | sudo tee /etc/default/zramswap >/dev/null
+        echo "ALGO=lz4" | sudo tee -a /etc/default/zramswap >/dev/null
+        systemctl restart zramswap
+        ;;
+    Pacman)
+        # Configuration for Arch Linux
+        echo "Updating the ZRAM configuration file to $ZRAM_SIZE MB..."
+        echo -e "[zram0]\nzram-size = $ZRAM_SIZE" | sudo tee /etc/systemd/zram-generator.conf >/dev/null
+        systemctl restart systemd-zram-setup@zram0
+        ;;
     esac
-    
-    echo "Arquivo atualizado com sucesso."
+
+    echo "File updated successfully."
     sleep 2
 }
-# Submenu de escolha de porcentagem
+
+# Submenu for ZRAM percentage selection
 submenu_zram() {
-    OPTION=$(echo -e "50%\n75%\n100%" | fzf --prompt="Escolha a porcentagem de ZRAM: ")
+    OPTION=$(echo -e "50%\n75%\n100%" | fzf --prompt="Choose the ZRAM percentage: ")
 
     case $OPTION in
-        "50%")
-            update_zram_config 50
-            ;;
-        "75%")
-            update_zram_config 75
-            ;;
-        "100%")
-            update_zram_config 100
-            ;;
-        *)
-            echo "Opção inválida."
-            sleep 2
-            ;;
+    "50%")
+        update_zram_config 50
+        ;;
+    "75%")
+        update_zram_config 75
+        ;;
+    "100%")
+        update_zram_config 100
+        ;;
+    *)
+        echo "Invalid option."
+        sleep 2
+        ;;
     esac
 }
+
 create_swapfile() {
     local size_mb=$1
     local swapfile="/swapfile"
 
-    # Desativar e remover swapfile existente
+    # Deactivate and remove existing swapfile
     if swapon --show | grep -q "$swapfile"; then
-        echo "Desativando swapfile existente..."
+        echo "Deactivating existing swapfile..."
         swapoff "$swapfile" 2>/dev/null
     fi
-    
+
     if [ -f "$swapfile" ]; then
-        echo "Removendo swapfile antigo..."
+        echo "Removing old swapfile..."
         rm -f "$swapfile"
     fi
 
-    echo "Criando swapfile de ${size_mb}MB..."
-    # Criar novo swapfile com fallocate (mais rápido) ou dd como fallback
+    echo "Creating a swapfile of ${size_mb}MB..."
+    # Create a new swapfile using fallocate (faster) or dd as fallback
     if command -v fallocate >/dev/null 2>&1; then
-        fallocate -l ${size_mb}M "$swapfile" || \
-        dd if=/dev/zero of="$swapfile" bs=1M count="$size_mb" status=progress
+        fallocate -l ${size_mb}M "$swapfile" ||
+            dd if=/dev/zero of="$swapfile" bs=1M count="$size_mb" status=progress
     else
         dd if=/dev/zero of="$swapfile" bs=1M count="$size_mb" status=progress
     fi
-    
+
     chmod 600 "$swapfile"
     mkswap "$swapfile"
     swapon "$swapfile"
-    
-    # Atualizar /etc/fstab
+
+    # Update /etc/fstab
     if ! grep -q "$swapfile" /etc/fstab; then
-        echo "$swapfile none swap defaults 0 0" >> /etc/fstab
+        echo "$swapfile none swap defaults 0 0" >>/etc/fstab
     fi
-    
-    echo "Swapfile criado e ativado com sucesso."
-    echo "Tamanho atual do swap:"
+
+    echo "Swapfile created and activated successfully."
+    echo "Current swap size:"
     free -h | grep Swap
     sleep 2
 }
+
 submenu_swapfile() {
     local sizes=("256MB" "512MB" "1GB" "2GB" "4GB" "6GB" "8GB" "10GB")
     local size_values=(256 512 1024 2048 4096 6144 8192 10240)
-    
-    OPTION=$(printf "%s\n" "${sizes[@]}" | fzf --prompt="Escolha o tamanho do swapfile: ")
-    
-    case $OPTION in
-        "256MB")  create_swapfile 256 ;;
-        "512MB")  create_swapfile 512 ;;
-        "1GB")    create_swapfile 1024 ;;
-        "2GB")    create_swapfile 2048 ;;
-        "4GB")    create_swapfile 4096 ;;
-        "6GB")    create_swapfile 6144 ;;
-        "8GB")    create_swapfile 8192 ;;
-        "10GB")   create_swapfile 10240 ;;
-        *)
-            echo "Opção inválida."
-            sleep 2
-            ;;
-    esac
-}
-check_root 
-gerenciador_pacotes
-instalar_zram_generator
-check_fzf 
-# Loop principal do menu
-while true; do
-    OPTION=$(echo -e "ZRAM\nSwapfile\nSair" | fzf --prompt="Escolha uma opção: ")
+
+    OPTION=$(printf "%s\n" "${sizes[@]}" | fzf --prompt="Choose the swapfile size: ")
 
     case $OPTION in
-        "ZRAM")
-            submenu_zram
-            ;;
-        "Swapfile")
-            submenu_swapfile
-            ;;
-        "Sair")
-            echo "Saindo..."
-            break
-            ;;
-        *)
-            echo "Opção inválida. Tente novamente."
-            sleep 2
-            ;;
+    "256MB") create_swapfile 256 ;;
+    "512MB") create_swapfile 512 ;;
+    "1GB") create_swapfile 1024 ;;
+    "2GB") create_swapfile 2048 ;;
+    "4GB") create_swapfile 4096 ;;
+    "6GB") create_swapfile 6144 ;;
+    "8GB") create_swapfile 8192 ;;
+    "10GB") create_swapfile 10240 ;;
+    *)
+        echo "Invalid option."
+        sleep 2
+        ;;
+    esac
+}
+
+check_root
+package_manager
+install_zram_generator
+check_fzf
+
+# Main menu loop
+while true; do
+    OPTION=$(echo -e "ZRAM\nSwapfile\nExit" | fzf --prompt="Choose an option: ")
+
+    case $OPTION in
+    "ZRAM")
+        submenu_zram
+        ;;
+    "Swapfile")
+        submenu_swapfile
+        ;;
+    "Exit")
+        echo "Exiting..."
+        break
+        ;;
+    *)
+        echo "Invalid option. Try again."
+        sleep 2
+        ;;
     esac
 done
