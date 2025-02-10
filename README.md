@@ -3,8 +3,8 @@
 skouswap is a script designed to facilitate the creation and management of swapfiles on Linux, using a simple and intuitive graphical interface. The goal of the script is to provide an easy way to configure swap on Linux systems, with support for multiple distributions and the possibility of optimizing memory usage.
 
 ## Installation:
-- use the stable version in the latest release: https://github.com/Skourge01/skouswap/releases/tag/2.6
-- use the testing version via commit: https://github.com/Skourge01/skouswap/commits/main/
+- use the **stable** version in the latest release: https://github.com/Skourge01/skouswap/releases/tag/2.6
+- use the **testing** version via commit: https://github.com/Skourge01/skouswap/commits/main/
 
 ### Tutorial
 - when installing the script it must be started via CLI command line use your preferred terminal
