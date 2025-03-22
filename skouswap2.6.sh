@@ -230,14 +230,13 @@ check_root
 gerenciador_pacotes
 instalar_zram_generator
 check_fzf 
-# Função para perguntar sobre reboot
 reboot_prompt() {
-    read -p "To change the changes do you want to restart the system? (y/n): " response
-    if [[ "$resposta" =~ ^[Yy]$ ]]; then
+    read -p "To apply the changes, do you want to restart the system? (y/n): " response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
         echo "Restarting the system..."
         sudo reboot
     else
-        echo "the system will not restart."
+        echo "The system will not restart."
     fi
 }
 
