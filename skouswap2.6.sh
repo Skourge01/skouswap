@@ -127,6 +127,18 @@ calculate_zram_size() {
         100)
             calculate_100_percent $ram_total
             ;;
+        110)
+            calculate_110_percent $ram_total
+            ;;
+        125)
+            calculate_125_percent $ram_total
+            ;;
+        150)
+            calculate_150_percent $ram_total
+            ;;  
+        175)
+            calculate_175_percent $ram_total
+
         *)
             echo 0
             ;;
