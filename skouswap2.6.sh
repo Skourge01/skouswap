@@ -4,8 +4,8 @@
 # now just give cat with zram generator
 check_root() {
     if [ "$EUID" -ne 0 ]; then
-        echo "Este script precisa ser executado como root."
-        read -p "Deseja executar como root? (s/n): " answer
+        echo "This script needs to be run as root."
+        read -p "Do you want to run as root? (s/n): " answer
         if [[ "$answer" =~ ^[Ss]$ ]]; then
             #  Call the script again with sudo and pass the arguments if any
             sudo "$0" "${@}"   # "$@" is safe to use here, as script arguments are passed
@@ -17,7 +17,7 @@ check_root() {
 }
 check_fzf () {
     if ! command -v fzf &> /dev/null; then 
-        read -p "O fzf não está instalado. Deseja instalá-lo? (s/n): " choice
+        read -p "fzf is not installed. Do you want to install it? (s/n): " choice
         if [[ "$choice" == [sS] ]]; then 
             if [[ -f /etc/arch-release ]]; then
                 sudo pacman -S fzf
@@ -31,7 +31,6 @@ check_fzf () {
         echo "O fzf já está instalado."
     fi
 }
-
 gerenciador_pacotes() {
     if command -v apt-get > /dev/null; then
         # Check if it is Ubuntu or Debian
@@ -86,15 +85,32 @@ calculate_50_percent() {
     local ram_total=$1
     echo $(( ram_total / 2 ))
 }
-
 calculate_75_percent() {
     local ram_total=$1
     echo $(( (ram_total * 3) / 4 ))
 }
-
 calculate_100_percent() {
     local ram_total=$1
     echo $ram_total
+}
+calculate_110_percent() {
+    local ram_total=$1
+    echo $(( (ram_total * 110) / 100 ))
+}
+
+calculate_125_percent() {
+    local ram_total=$1
+    echo $(( (ram_total * 125) / 100 ))
+}
+
+calculate_150_percent() {
+    local ram_total=$1
+    echo $(( (ram_total * 150) / 100 ))
+}
+
+calculate_175_percent() {
+    local ram_total=$1
+    echo $(( (ram_total * 175) / 100 ))
 }
 # Main function to calculate ZRAM size
 calculate_zram_size() {
@@ -122,7 +138,7 @@ update_zram_config() {
     ZRAM_SIZE=$(calculate_zram_size $percentage)
     
     if [ "$ZRAM_SIZE" -eq 0 ]; then
-        echo "Opção inválida."
+        echo "Invalid option."
         return
     fi
 
@@ -130,39 +146,39 @@ update_zram_config() {
     
     case $gerenciador in
         APT)
-            # Configuration for Debian/Ubuntu
-            echo "Atualizando o arquivo de configuração do ZRAM para $ZRAM_SIZE MB..."
+            # Debian/Ubuntu
+            echo "Updating ZRAM configuration file to $ZRAM_SIZE MB..."
             echo "PERCENT=$percentage" | sudo tee /etc/default/zramswap > /dev/null
             echo "ALGO=lz4" | sudo tee -a /etc/default/zramswap > /dev/null
             systemctl restart zramswap
             ;;
         Pacman)
-            # Configuration for archlinux 
-            echo "Atualizando o arquivo de configuração do ZRAM para $ZRAM_SIZE MB..."
+            # Arch Linux
+            echo "Updating ZRAM configuration file to $ZRAM_SIZE MB..."
             echo -e "[zram0]\nzram-size = $ZRAM_SIZE" | sudo tee /etc/systemd/zram-generator.conf > /dev/null
             systemctl restart systemd-zram-setup@zram0
             ;;
     esac
     
-    echo "Arquivo atualizado com sucesso."
+    echo "file updated successfully."
     sleep 2
 }
-# Percentage choice submenu
+
+# Submenu de escolha da porcentagem do ZRAM
 submenu_zram() {
-    OPTION=$(echo -e "50%\n75%\n100%" | fzf --prompt="Escolha a porcentagem de ZRAM: ")
+    OPTION=$(echo -e "50%\n75%\n100%\n110%\n125%\n150%\n175%\nVoltar" | fzf --prompt="Escolha a porcentagem de ZRAM: ")
 
     case $OPTION in
-        "50%")
-            update_zram_config 50
-            ;;
-        "75%")
-            update_zram_config 75
-            ;;
-        "100%")
-            update_zram_config 100
-            ;;
-        *)
-            echo "Opção inválida."
+        "50%") update_zram_config 50 ;;
+        "75%") update_zram_config 75 ;;
+        "100%") update_zram_config 100 ;;
+        "110%") update_zram_config 110 ;;
+        "125%") update_zram_config 125 ;;
+        "150%") update_zram_config 150 ;;
+        "175%") update_zram_config 175 ;;
+        "Voltar") return ;;  # Simplesmente retorna ao menu anterior
+        *) 
+            echo "invalid option."
             sleep 2
             ;;
     esac
@@ -206,7 +222,7 @@ create_swapfile() {
     sleep 2
 }
 submenu_swapfile() {
-    local sizes=("256MB" "512MB" "1GB" "2GB" "4GB" "6GB" "8GB" "10GB")
+    local sizes=("256MB" "512MB" "1GB" "2GB" "4GB" "6GB" "8GB" "10GB" "return")
     local size_values=(256 512 1024 2048 4096 6144 8192 10240)
     
     OPTION=$(printf "%s\n" "${sizes[@]}" | fzf --prompt="Choose swapfile size: ")
@@ -220,11 +236,15 @@ submenu_swapfile() {
         "6GB")    create_swapfile 6144 ;;
         "8GB")    create_swapfile 8192 ;;
         "10GB")   create_swapfile 10240 ;;
+        "return") return ;; 
         *)
             echo "Invalid option."
             sleep 2
             ;;
     esac
+}
+disable_swap() {
+    sudo swapoff -a
 }
 check_root 
 gerenciador_pacotes
@@ -242,7 +262,7 @@ reboot_prompt() {
 
 # Loop do menu principal
 while true; do
-    OPTION=$(echo -e "ZRAM\nSwapfile\nSair" | fzf --prompt="Escolha uma opção: ")
+    OPTION=$(echo -e "ZRAM\nSwapfile\nDisable Swap\nExit" | fzf --prompt="Choose an option: ")
 
     case $OPTION in
         "ZRAM")
@@ -251,14 +271,20 @@ while true; do
         "Swapfile")
             submenu_swapfile
             ;;
-        "Sair")
-            echo "Saindo..."
+        "Disable Swap")
+            echo "Disabling Swap..."
+            disable_swap
+            sleep 2
+            ;;
+        "Exit")
+            echo "Exiting..."
             reboot_prompt
             break
             ;;
         *)
-            echo "Opção inválida. Tente novamente."
+            echo "Invalid option. Try again."
             sleep 2
             ;;
     esac
 done
+
