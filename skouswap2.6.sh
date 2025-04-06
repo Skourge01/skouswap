@@ -5,8 +5,8 @@
 check_root() {
     if [ "$EUID" -ne 0 ]; then
         echo "This script needs to be run as root."
-        read -p "Do you want to run as root? (s/n): " answer
-        if [[ "$answer" =~ ^[Ss]$ ]]; then
+        read -p "Do you want to run as root? (y/n): " answer
+        if [[ "$answer" =~ ^[Yy]$ ]]; then
             #  Call the script again with sudo and pass the arguments if any
             sudo "$0" "${@}"   # "$@" is safe to use here, as script arguments are passed
             exit 0
@@ -17,8 +17,8 @@ check_root() {
 }
 check_fzf () {
     if ! command -v fzf &> /dev/null; then 
-        read -p "fzf is not installed. Do you want to install it? (s/n): " choice
-        if [[ "$choice" == [sS] ]]; then 
+        read -p "fzf is not installed. Do you want to install it? (y/n): " choice
+        if [[ "$choice" == [Yy] ]]; then 
             if [[ -f /etc/arch-release ]]; then
                 sudo pacman -S fzf
             elif [[ -f /etc/debian_version ]]; then
@@ -37,13 +37,13 @@ gerenciador_pacotes() {
         if [ -f /etc/debian_version ]; then
             echo "APT"
         else
-            echo "Gerenciador de pacotes não suportado."
+            echo "Package manager not suported."
             exit 1
         fi
     elif command -v pacman > /dev/null; then
         echo "Pacman"
     else
-        echo "Gerenciador de pacotes não suportado."
+        echo "Package manager not suported."
         exit 1
     fi
 }
@@ -53,7 +53,7 @@ instalar_zram_generator() {
     case $gerenciador in
         APT)
             if ! dpkg -l | grep -q "zram-tools"; then
-                echo "Instalando zram-tools..."
+                echo "Installing zram-tools..."
                 apt-get update
                 apt-get install -y zram-tools
                 
@@ -63,19 +63,19 @@ instalar_zram_generator() {
                     systemctl restart zramswap
                 fi
             else
-                echo "zram-tools já está instalado."
+                echo "zram-tools already installed ."
             fi
             ;;
         Pacman)
             if ! pacman -Qi zram-generator &> /dev/null; then
-                echo "Instalando zram-generator..."
+                echo "Installing zram-generator..."
                 pacman -Sy --noconfirm zram-generator
             else
-                echo "zram-generator já está instalado."
+                echo "zram-generator already installed."
             fi
             ;;
         *)
-            echo "Gerenciador de pacotes não suportado."
+            echo "Package manager not supported"
             exit 1
             ;;
     esac
@@ -178,7 +178,7 @@ update_zram_config() {
 
 # Submenu de escolha da porcentagem do ZRAM
 submenu_zram() {
-    OPTION=$(echo -e "50%\n75%\n100%\n110%\n125%\n150%\n175%\nVoltar" | fzf --prompt="Escolha a porcentagem de ZRAM: ")
+    OPTION=$(echo -e "50%\n75%\n100%\n110%\n125%\n150%\n175%\nReturn" | fzf --prompt="Escolha a porcentagem de ZRAM: ")
 
     case $OPTION in
         "50%") update_zram_config 50 ;;
@@ -188,7 +188,7 @@ submenu_zram() {
         "125%") update_zram_config 125 ;;
         "150%") update_zram_config 150 ;;
         "175%") update_zram_config 175 ;;
-        "Voltar") return ;;  # Simplesmente retorna ao menu anterior
+        "Return") return ;;  # Simplesmente retorna ao menu anterior
         *) 
             echo "invalid option."
             sleep 2
