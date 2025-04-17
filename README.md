@@ -41,11 +41,16 @@ It is recommended that you use this script with these memories:
 8gb: 100% zram 
 12gb: 8gb swapfile 
 16gb+: dont use or 100% swapfile 
+
 ## ATTENTION
 - after running the script, restart the system so that the changes are made automatically
 ```
 sudo reboot
 ```
+- the script sometimes requires you to activate it several times to work, make sure you activate htop to check if it worked
+![Captura de tela de 2025-04-17 15-12-51](https://github.com/user-attachments/assets/e9f7760c-4d08-486e-b5e7-902874eea068)
+
+
 ## Zram
 - ZRAM is a technology that creates a virtual disk in RAM and uses compression to store data. It is useful for systems with little memory, as it allows more data to be stored in compressed RAM, reducing the use of swap on the disk and improving performance
 ### Advantages:
