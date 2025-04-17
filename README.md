@@ -33,6 +33,14 @@ su
 - an interface in fzf will appear saying;
 zram
 swapfile
+## Recommend setup 
+It is recommended that you use this script with these memories: 
+2gb: 175% zram 
+4gb: 175% zram 
+6gb: 150% zram 
+8gb: 100% zram 
+12gb: 8gb swapfile 
+16gb+: dont use or 100% swapfile 
 ## ATTENTION
 - after running the script, restart the system so that the changes are made automatically
 ```
